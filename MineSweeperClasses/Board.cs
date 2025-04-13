@@ -4,148 +4,106 @@ namespace MineSweeperClasses
 {
     public class Board
     {
-        public int Size { get; set; }
-        public float Difficulty { get; set; }
-        public Cell[,] Cells { get; set; }
-        public DateTime StartTime { get; set; }
-        public DateTime EndTime { get; set; }
-        public int RewardsRemaining { get; set; } = 0;
+        public int boardSize { get; set; }
+        public float gameDifficulty { get; set; }
+        public Cell[,] gameCells { get; set; }
+        public DateTime startTime { get; set; }
+        public DateTime endTime { get; set; }
+        public int rewardsRemaining { get; set; } = 0;
 
         public enum GameStatus { InProgress, Won, Lost }
-        public GameStatus State { get; set; }
+        public GameStatus gameState { get; set; }
 
         Random random = new Random();
 
-        public Board(int size, float difficulty)
+        public Board(int boardSize, float gameDifficulty)
         {
-            Size = size;
-            Difficulty = difficulty;
-            Cells = new Cell[size, size];
+            this.boardSize = boardSize;
+            this.gameDifficulty = gameDifficulty;
+            gameCells = new Cell[boardSize, boardSize];
             InitializeBoard();
-            PlaceRewards();
         }
 
         private void InitializeBoard()
         {
-            for (int i = 0; i < Size; i++)
+            for (int rowIndex = 0; rowIndex < boardSize; rowIndex++)
             {
-                for (int j = 0; j < Size; j++)
+                for (int columnIndex = 0; columnIndex < boardSize; columnIndex++)
                 {
-                    Cells[i, j] = new Cell
+                    gameCells[rowIndex, columnIndex] = new Cell
                     {
-                        Row = i,
-                        Column = j
+                        rowIndex = rowIndex,
+                        columnIndex = columnIndex
                     };
                 }
             }
 
             SetupBombs();
             CalculateNumberOfBombNeighbors();
-            StartTime = DateTime.Now;
+            startTime = DateTime.Now;
         }
 
         public void SetupBombs()
         {
-            int totalBombs = (int)(Size * Size * Difficulty);
-            int placedBombs = 0;
+            int totalBombs = (int)(boardSize * boardSize * gameDifficulty);
+            int bombsPlaced = 0;
 
-            while (placedBombs < totalBombs)
+            while (bombsPlaced < totalBombs)
             {
-                int x = random.Next(Size);
-                int y = random.Next(Size);
+                int randRow = random.Next(boardSize);
+                int randCol = random.Next(boardSize);
 
-                if (!Cells[x, y].IsBomb)
+                if (!gameCells[randRow, randCol].isBomb)
                 {
-                    Cells[x, y].IsBomb = true;
-                    placedBombs++;
-                }
-            }
-        }
-
-        // Place rewards on random non-bomb cells
-        public void PlaceRewards()
-        {
-            int totalRewards = Math.Max(1, Size / 5);
-            int placedRewards = 0;
-
-            while (placedRewards < totalRewards)
-            {
-                int x = random.Next(Size);
-                int y = random.Next(Size);
-
-                if (!Cells[x, y].IsBomb && !Cells[x, y].HasSpecialReward)
-                {
-                    Cells[x, y].HasSpecialReward = true;
-                    placedRewards++;
-                    RewardsRemaining++;
+                    gameCells[randRow, randCol].isBomb = true;
+                    bombsPlaced++;
                 }
             }
         }
 
         public void CalculateNumberOfBombNeighbors()
         {
-            for (int i = 0; i < Size; i++)
+            for (int rowIndex = 0; rowIndex < boardSize; rowIndex++)
             {
-                for (int j = 0; j < Size; j++)
+                for (int columnIndex = 0; columnIndex < boardSize; columnIndex++)
                 {
-                    if (Cells[i, j].IsBomb)
+                    if (gameCells[rowIndex, columnIndex].isBomb)
                     {
-                        Cells[i, j].NumberOfBombNeighbors = 9;
+                        gameCells[rowIndex, columnIndex].numberOfBombNeighbors = 9;
                     }
                     else
                     {
-                        Cells[i, j].NumberOfBombNeighbors = GetNumberOfBombNeighbors(i, j);
+                        gameCells[rowIndex, columnIndex].numberOfBombNeighbors =
+                            GetNumberOfBombNeighbors(rowIndex, columnIndex);
                     }
                 }
             }
         }
 
-        private int GetNumberOfBombNeighbors(int row, int col)
+        private int GetNumberOfBombNeighbors(int rowIndex, int columnIndex)
         {
-            int count = 0;
+            int bombCount = 0;
 
             for (int dx = -1; dx <= 1; dx++)
             {
                 for (int dy = -1; dy <= 1; dy++)
                 {
-                    int newRow = row + dx;
-                    int newCol = col + dy;
+                    int adjRow = rowIndex + dx;
+                    int adjCol = columnIndex + dy;
 
-                    if (IsCellOnBoard(newRow, newCol) && Cells[newRow, newCol].IsBomb)
+                    if (IsCellOnBoard(adjRow, adjCol) && gameCells[adjRow, adjCol].isBomb)
                     {
-                        count++;
-                    }
-                }
-            }
-            return count;
-        }
-
-        private bool IsCellOnBoard(int row, int col)
-        {
-            return row >= 0 && row < Size && col >= 0 && col < Size;
-        }
-
-        // Determine Game State
-        public GameStatus DetermineGameState()
-        {
-            bool allNonBombCellsVisited = true;
-
-            for (int i = 0; i < Size; i++)
-            {
-                for (int j = 0; j < Size; j++)
-                {
-                    if (Cells[i, j].IsBomb && Cells[i, j].IsVisited)
-                    {
-                        return GameStatus.Lost;
-                    }
-                    if (!Cells[i, j].IsBomb && !Cells[i, j].IsVisited)
-                    {
-                        allNonBombCellsVisited = false;
+                        bombCount++;
                     }
                 }
             }
 
-            return allNonBombCellsVisited ? GameStatus.Won : GameStatus.InProgress;
+            return bombCount;
+        }
+
+        private bool IsCellOnBoard(int rowIndex, int columnIndex)
+        {
+            return rowIndex >= 0 && rowIndex < boardSize && columnIndex >= 0 && columnIndex < boardSize;
         }
     }
 }
